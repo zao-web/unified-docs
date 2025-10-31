@@ -69,6 +69,9 @@ class Unified_Docs {
         if (is_admin()) {
             UnifiedDocs\Admin\Menu::get_instance();
             UnifiedDocs\Core\ContextualHelp::get_instance();
+
+            // Diagnostic page (hidden from menu)
+            UnifiedDocs\Admin\Diagnostic::init();
         }
 
         // Register AJAX handlers
