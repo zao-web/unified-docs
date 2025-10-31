@@ -46,7 +46,7 @@ jobs:
           # Deploy plugin subdirectory
           server-dir: ${{ steps.plugin-path.outputs.remote_path }}
 
-          # Exclude development files
+          # Exclude development files and the loader file (deployed separately)
           exclude: |
             **/.git*
             **/.git*/**
@@ -54,6 +54,7 @@ jobs:
             **/.env*
             .github/**
             .vscode/**
+            unified-docs.php
 
           log-level: verbose
 
@@ -61,7 +62,7 @@ jobs:
         run: |
           # The loader file (unified-docs.php) needs to be in the parent mu-plugins directory
           # We'll use curl to upload it via FTPS
-          LOADER_FILE="../${{ steps.plugin-path.outputs.plugin_name }}.php"
+          LOADER_FILE="./${{ steps.plugin-path.outputs.plugin_name }}.php"
 
           if [ -f "$LOADER_FILE" ]; then
             echo "📄 Deploying loader file: ${{ steps.plugin-path.outputs.plugin_name }}.php"
