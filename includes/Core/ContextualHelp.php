@@ -96,6 +96,7 @@ class ContextualHelp {
     private function build_screen_map() {
         $this->screen_map = [];
 
+        return;
         // Get cached docs
         $cache = new Cache();
         $organized = $cache->get_organized_docs();
