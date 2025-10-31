@@ -77,29 +77,56 @@ class Diagnostic {
             echo '<p>The deployment did not update this file correctly.</p>';
         }
 
-        echo '<h2>Check Loaded Class (in opcache)</h2>';
+        echo '<h2>Check Loaded Class</h2>';
 
         // Check if class is already loaded
         if (class_exists('Parsedown', false)) {
-            echo '<p>⚠️  Parsedown class already loaded (possibly from opcache)</p>';
+            echo '<p style="background: #fff3cd; padding: 10px; border-left: 4px solid #ffc107;">⚠️  Parsedown class ALREADY LOADED before we could load our version!</p>';
 
             $reflection = new \ReflectionClass('Parsedown');
-            echo '<p>Loaded from: <code>' . $reflection->getFileName() . '</code></p>';
+            $loaded_from = $reflection->getFileName();
+            echo '<p><strong>Loaded from:</strong> <code>' . esc_html($loaded_from) . '</code></p>';
+
+            // Check if it's our file or a different one
+            if ($loaded_from === $parsedown_path) {
+                echo '<p style="color: green;">✅ This IS our unified-docs Parsedown file</p>';
+            } else {
+                echo '<p style="color: red; font-weight: bold; background: #fee; padding: 10px;">❌ THIS IS A DIFFERENT FILE!</p>';
+                echo '<p><strong>FOUND THE PROBLEM:</strong> Another plugin or WordPress core loaded a different Parsedown library before unified-docs could load its version.</p>';
+                echo '<p><strong>Conflicting file:</strong> <code>' . esc_html($loaded_from) . '</code></p>';
+            }
+
+            // Check namespace
+            $namespace = $reflection->getNamespaceName();
+            if ($namespace) {
+                echo '<p><strong>Namespace:</strong> <code>' . esc_html($namespace) . '</code></p>';
+            } else {
+                echo '<p><strong>Namespace:</strong> Global namespace (no namespace)</p>';
+            }
+
+            // Check version
+            if (defined('Parsedown::version')) {
+                echo '<p><strong>Version:</strong> ' . \Parsedown::version . '</p>';
+            }
 
             if (method_exists('Parsedown', 'textElements')) {
                 echo '<p style="color: green;">✅ textElements() method exists in LOADED class</p>';
             } else {
                 echo '<p style="color: red; font-weight: bold;">❌ textElements() method DOES NOT exist in LOADED class</p>';
-                echo '<p>This means opcache is serving the old version even though the file is updated.</p>';
-                echo '<p><strong>Solution:</strong> Restart PHP-FPM or clear opcache and reload this page.</p>';
+                if ($loaded_from !== $parsedown_path) {
+                    echo '<p><strong>This confirms it:</strong> The conflicting file is an older version of Parsedown.</p>';
+                }
             }
         } else {
-            echo '<p>Class not yet loaded - will load fresh from file now...</p>';
+            echo '<p style="color: green;">✅ Parsedown class not yet loaded - will load our version now...</p>';
             require_once $parsedown_path;
+
+            $reflection = new \ReflectionClass('Parsedown');
+            echo '<p><strong>Loaded from:</strong> <code>' . esc_html($reflection->getFileName()) . '</code></p>';
 
             if (method_exists('Parsedown', 'textElements')) {
                 echo '<p style="color: green;">✅ textElements() method exists in NEWLY loaded class</p>';
-                echo '<p>The file is correct! The issue is opcache serving old version elsewhere.</p>';
+                echo '<p>Our file is correct! The issue must be that another file loads first in production.</p>';
             } else {
                 echo '<p style="color: red;">❌ textElements() method does not exist even in fresh load</p>';
             }
