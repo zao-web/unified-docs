@@ -59,26 +59,22 @@ jobs:
           log-level: verbose
 
       - name: Deploy loader file to mu-plugins root
-        run: |
-          # The loader file (unified-docs.php) needs to be in the parent mu-plugins directory
-          # We'll use curl to upload it via FTPS
-          LOADER_FILE="./${{ steps.plugin-path.outputs.plugin_name }}.php"
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.SIERRA_SFTP_HOST }}
+          username: ${{ secrets.SIERRA_SFTP_USERNAME }}
+          password: ${{ secrets.SIERRA_SFTP_PASSWORD }}
+          port: ${{ secrets.SIERRA_SFTP_PORT }}
+          protocol: ftps
+          # Deploy to mu-plugins root (parent directory)
+          server-dir: ${{ env.MU_PLUGINS_BASE_PATH }}/
 
-          if [ -f "$LOADER_FILE" ]; then
-            echo "📄 Deploying loader file: ${{ steps.plugin-path.outputs.plugin_name }}.php"
+          # Only include the loader file
+          exclude: |
+            **/*
+            !unified-docs.php
 
-            curl -T "$LOADER_FILE" \
-              --ssl-reqd \
-              --ftp-ssl \
-              --user "${{ secrets.SIERRA_SFTP_USERNAME }}:${{ secrets.SIERRA_SFTP_PASSWORD }}" \
-              "ftps://${{ secrets.SIERRA_SFTP_HOST }}:${{ secrets.SIERRA_SFTP_PORT }}${{ env.MU_PLUGINS_BASE_PATH }}/${{ steps.plugin-path.outputs.plugin_name }}.php"
-
-            echo "✅ Loader file deployed"
-          else
-            echo "⚠️  Loader file not found at $LOADER_FILE"
-            echo "This MU plugin may not work without it!"
-            exit 1
-          fi
+          log-level: verbose
 
       - name: Deployment Summary
         if: success()
